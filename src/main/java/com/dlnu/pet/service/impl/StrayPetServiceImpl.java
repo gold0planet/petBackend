@@ -18,6 +18,7 @@ import io.jsonwebtoken.io.IOException;
 
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
@@ -144,7 +145,9 @@ public class StrayPetServiceImpl implements StrayPetService {
         // 创建领养申请记录
         Adoption adoption = new Adoption();
         adoption.setPetId(id);
-        adoption.setUserId(1L); // TODO: 从当前登录用户获取userId
+        User loginUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        Long userId = loginUser.getId();
+        adoption.setUserId(userId);
         adoption.setProvince(applicationInfo.getProvince());
         adoption.setCity(applicationInfo.getCity());
         adoption.setRequirements(applicationInfo.getReason()+"\n"+applicationInfo.getPhone());
