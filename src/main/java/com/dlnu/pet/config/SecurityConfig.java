@@ -1,6 +1,5 @@
 package com.dlnu.pet.config;
 
-import com.dlnu.pet.config.JWTConfig;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -15,7 +14,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
     @Autowired
-    private JWTConfig jwtFilter;
+    private JWTFilter jwtFilter;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -29,7 +28,14 @@ public class SecurityConfig {
         //         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)  // 无状态会话
         //         .and()
         //     .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
-        http.securityMatcher("/api/auth/**");
+        // http.securityMatcher("/api/auth/**");
+        http.logout(logout -> logout
+            .logoutUrl("/logout") // 默认就是 /logout
+            .logoutSuccessUrl("/login") // 登出后跳转
+            .invalidateHttpSession(true) // 使session失效
+            .clearAuthentication(true) // 清除认证信息
+            // .deleteCookies("JSESSIONID") // 如有需要可清除cookie
+        );
         return http.build();
     }
 }

@@ -9,10 +9,12 @@ import com.dlnu.pet.mapper.UserMapper;
 import com.dlnu.pet.pojo.dto.ApplyDTO;
 import com.dlnu.pet.pojo.dto.StrayPetDTO;
 import com.dlnu.pet.pojo.entity.Adoption;
+import com.dlnu.pet.pojo.entity.LoginUser;
 import com.dlnu.pet.pojo.entity.Pet;
 import com.dlnu.pet.pojo.entity.User;
 import com.dlnu.pet.service.StrayPetService;
 import com.dlnu.pet.util.PetEnumUtil;
+import com.dlnu.pet.util.SecurityUtil;
 
 import io.jsonwebtoken.io.IOException;
 
@@ -126,7 +128,7 @@ public class StrayPetServiceImpl implements StrayPetService {
         
         // 创建领养信息记录
         Adoption adoption = new Adoption();
-        adoption.setUserId(1L); // TODO: 从当前登录用户获取userId
+        adoption.setUserId(SecurityUtil.getLoginUserId());
         adoption.setHealth(adoptionInfo.getHealth());
         adoption.setProvince(adoptionInfo.getProvince());
         adoption.setCity(adoptionInfo.getCity());
@@ -142,12 +144,10 @@ public class StrayPetServiceImpl implements StrayPetService {
 
     @Override
     public Long applyAdoption(Long id, ApplyDTO applicationInfo) {   
-        // 创建领养申请记录
+        // 创建 领养申请 记录
         Adoption adoption = new Adoption();
         adoption.setPetId(id);
-        User loginUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        Long userId = loginUser.getId();
-        adoption.setUserId(userId);
+        adoption.setUserId(SecurityUtil.getLoginUserId());
         adoption.setProvince(applicationInfo.getProvince());
         adoption.setCity(applicationInfo.getCity());
         adoption.setRequirements(applicationInfo.getReason()+"\n"+applicationInfo.getPhone());

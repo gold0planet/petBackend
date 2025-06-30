@@ -1,5 +1,6 @@
 package com.dlnu.pet.service.impl;
 
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -119,7 +120,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             }
             
             // 生成token
-            String token = JwtUtil.generateToken(user.getId());
+            String token = JwtUtil.generateToken(user.getId(), user.getPhone());
             // 将token存入redis
             redisTemplate.opsForValue().set(user.getPhone(), token, 1, TimeUnit.HOURS);
             return Result.success(new LoginVO(
@@ -155,7 +156,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             redisTemplate.delete(key);
             
             // 生成token
-            String token = JwtUtil.generateToken(user.getId());
+            String token = JwtUtil.generateToken(user.getId(), user.getPhone());
             // 将token存入redis
             redisTemplate.opsForValue().set(user.getPhone(), token, 1, TimeUnit.HOURS);
             return Result.success(new LoginVO(
@@ -174,9 +175,10 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     public Result logout(String token) {
         try {
             // 1. 解析token获取用户ID（可选）
-            Long userId = JwtUtil.parseToken(token);
+            Map<String, Object> claims = JwtUtil.parseToken(token);
+            String phone = (String) claims.get("phone");
             // 2. 删除token
-            redisTemplate.delete(userId.toString());
+            redisTemplate.delete(phone);
             
             return Result.success(null);
         } catch (Exception e) {

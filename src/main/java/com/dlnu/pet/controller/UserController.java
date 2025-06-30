@@ -1,7 +1,6 @@
 package com.dlnu.pet.controller;
 
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import com.dlnu.pet.pojo.dto.LoginDTO;
 import com.dlnu.pet.pojo.dto.LogoutDTO;
@@ -12,7 +11,6 @@ import com.dlnu.pet.service.UserService;
 import lombok.RequiredArgsConstructor;
 
 @RestController
-@RequestMapping("/api/user")
 @RequiredArgsConstructor
 public class UserController {
 

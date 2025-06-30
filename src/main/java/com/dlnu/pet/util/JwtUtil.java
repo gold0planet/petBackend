@@ -6,6 +6,8 @@ import io.jsonwebtoken.security.Keys;
 
 import java.security.Key;
 import java.util.Date;
+import java.util.Map;
+import java.util.HashMap;
 
 public class JwtUtil {
     // 设置token过期时间为7天
@@ -19,12 +21,13 @@ public class JwtUtil {
      * @param userId 用户ID
      * @return Token字符串
      */
-    public static String generateToken(Long userId) {
+    public static String generateToken(Long userId, String phone) {
         Date now = new Date();
         Date expiration = new Date(now.getTime() + EXPIRE_TIME);
         
         return Jwts.builder()
             .setSubject(userId.toString())
+            .claim("phone", phone)
             .setIssuedAt(now)
             .setExpiration(expiration)
             .signWith(SECRET_KEY, SignatureAlgorithm.HS256)
@@ -36,15 +39,17 @@ public class JwtUtil {
      * @param token Token字符串
      * @return 用户ID
      */
-    public static Long parseToken(String token) {
-        return Long.parseLong(
-            Jwts.parserBuilder()
-                .setSigningKey(SECRET_KEY)
-                .build()
-                .parseClaimsJws(token)
-                .getBody()
-                .getSubject()
-        );
+    public static Map<String, Object> parseToken(String token) {
+        var claims = Jwts.parserBuilder()
+            .setSigningKey(SECRET_KEY)
+            .build()
+            .parseClaimsJws(token)
+            .getBody();
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("userId", Long.parseLong(claims.getSubject()));
+        result.put("phone", claims.get("phone", String.class));
+        return result;
     }
     /**
      * 验证Token
