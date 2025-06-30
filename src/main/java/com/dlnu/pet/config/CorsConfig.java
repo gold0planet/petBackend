@@ -1,4 +1,4 @@
-package com.dlnu.pet.common;
+package com.dlnu.pet.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

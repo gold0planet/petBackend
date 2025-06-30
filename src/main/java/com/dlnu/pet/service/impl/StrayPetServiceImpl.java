@@ -1,15 +1,21 @@
 package com.dlnu.pet.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.dlnu.pet.mapper.AdoptionMapper;
 import com.dlnu.pet.mapper.PetMapper;
+import com.dlnu.pet.mapper.UserMapper;
 import com.dlnu.pet.pojo.dto.ApplyDTO;
 import com.dlnu.pet.pojo.dto.StrayPetDTO;
 import com.dlnu.pet.pojo.entity.Adoption;
 import com.dlnu.pet.pojo.entity.Pet;
+import com.dlnu.pet.pojo.entity.User;
 import com.dlnu.pet.service.StrayPetService;
 import com.dlnu.pet.util.PetEnumUtil;
+
+import io.jsonwebtoken.io.IOException;
+
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -28,6 +34,9 @@ public class StrayPetServiceImpl implements StrayPetService {
     
     @Autowired
     private AdoptionMapper adoptionMapper;
+
+    @Autowired
+    private UserMapper userMapper;
 
     @Override
     public Map<String, Object> getStrayPetList(Integer page, Integer pageSize, String breed,
@@ -131,12 +140,7 @@ public class StrayPetServiceImpl implements StrayPetService {
     }
 
     @Override
-    public Long applyAdoption(Long id, ApplyDTO applicationInfo) {
-        // 查询宠物信息
-        Pet pet = petMapper.selectById(id);
-        if (pet == null) {
-            throw new RuntimeException("宠物不存在");
-        }        
+    public Long applyAdoption(Long id, ApplyDTO applicationInfo) {   
         // 创建领养申请记录
         Adoption adoption = new Adoption();
         adoption.setPetId(id);
@@ -146,7 +150,46 @@ public class StrayPetServiceImpl implements StrayPetService {
         adoption.setRequirements(applicationInfo.getReason()+"\n"+applicationInfo.getPhone());
         adoption.setStatus(PetEnumUtil.AdoptionStatus.WAITING.getCode());
         adoptionMapper.insert(adoption);
-
+        // 通知发布者
+        // 获取发布者信息
+        // 1. 筛选pet_id为id 且 status为1（发布）的领养信息
+        Adoption publisher = adoptionMapper.selectOne(new LambdaQueryWrapper<Adoption>()
+                .eq(Adoption::getPetId, id)
+                .eq(Adoption::getStatus, PetEnumUtil.AdoptionStatus.PUBLISH.getCode()));
+        if (publisher == null) {
+            throw new RuntimeException("领养信息不存在");
+        }
+        User publisherUser = userMapper.selectById(publisher.getUserId());
+        if (publisher == null) {
+            throw new RuntimeException("发布者不存在");
+        }
+        // 发送通知
+        String message = "来自" + applicationInfo.getPhone() + "的领养申请";
+        // 查询发布者是否在线
+        String publisherToken = redisTemplate.opsForValue().get(publisherUser.getPhone());
+        if (publisherToken == null) {
+            throw new RuntimeException("发布者不在线");
+            // 消息存储在sql中
+            AdoptionNotice notice = new AdoptionNotice();
+            notice.setAdoptionId(publisher.getId());
+            notice.setNotice(message);
+            notice.setCreateTime(new Date());
+            notice.setUpdateTime(new Date());
+            noticeMapper.insert(notice);
+        }
+        // 在线发送通知
+        // 使用WebSocket发送通知
+        // 获取WebSocketSession
+        WebSocketSession session = sessions.get(publisherUser.getPhone());
+        if (session != null) {
+            try {
+                session.sendMessage(new TextMessage(message));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        
         return adoptionMapper.selectLastInsertId();
+
     }
 } 

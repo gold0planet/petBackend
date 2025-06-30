@@ -46,4 +46,20 @@ public class JwtUtil {
                 .getSubject()
         );
     }
+    /**
+     * 验证Token
+     * @param token Token字符串
+     * @return 是否有效
+     */
+    public static boolean validateToken(String token) {
+        try {
+            Jwts.parserBuilder()
+                .setSigningKey(SECRET_KEY)
+                .build()
+                .parseClaimsJws(token);
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
 } 

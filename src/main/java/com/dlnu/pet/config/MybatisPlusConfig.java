@@ -1,4 +1,4 @@
-package com.dlnu.pet.common;
+package com.dlnu.pet.config;
 
 import com.baomidou.mybatisplus.annotation.DbType;
 import com.baomidou.mybatisplus.extension.plugins.MybatisPlusInterceptor;
